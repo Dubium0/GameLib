@@ -1,0 +1,21 @@
+POST http://localhost:5291/api/games
+Content-Type: application/json
+
+{
+  "name": "Grand Theft Auto V",
+  
+  "releaseDate": "2013-09-17",
+  
+  "backgroundImageUrl" : "https://media.rawg.io/media/games/20a/20aa03a10cda45239fe22d035c0ebe64.jpg",
+  "metaCritic" : 92
+}
+###
+GET http://localhost:5291/games?pageSize=20
+###
+GET http://localhost:5291/games?page=20&descendingOrder=true
+###
+GET http://localhost:5291/games?page=1&pageSize=5
+###
+GET https://api.rawg.io/api/games?key=6b5fcc8fe6c748eaac97665e86118d6f&metacritic="80-100"&page_size=400
+###
+GET https://api.rawg.io/api/genres?key=6b5fcc8fe6c748eaac97665e86118d6f
