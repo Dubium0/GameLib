@@ -30,6 +30,8 @@ app.UseCors("AllowAll");
 
 app.UseCors(MyAllowSpecificOrigins);
 app.MapGamesEndpoints();
+app.MapGenresEndpoints();
+app.MapPlatformsEndpoints();
 
 
 await app.MigrateDbAsync();

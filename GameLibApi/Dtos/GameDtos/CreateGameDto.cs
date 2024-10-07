@@ -4,10 +4,10 @@ namespace GameLibApi.Dtos.GameDtos;
 
 public record class CreateGameDto(
     [Required] string Name,
-    [Required] int GenreId,
-    [Required] int PlatformId,
+    [Required] List<string> GenreNames,
+    [Required] List<string> PlatformNames,
     [Required] DateOnly ReleaseDate,
-    [Required] int MetaCritic,
-    string? BackgroundImageUrl
+    [Required] [Range(0,100)] int MetaCritic,
+    [Url] string? BackgroundImageUrl
 );
 

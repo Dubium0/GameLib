@@ -8,46 +8,43 @@ public static class GameMapping
 {
     public static Game ToEntity(this CreateGameDto game){
 
-         return new Game{
+        return new Game{
                 Name = game.Name,
-                GenreId = game.GenreId,
-                PlatformId = game.PlatformId,
                 ReleaseDate = game.ReleaseDate,
                 MetaCritic = game.MetaCritic,
                 BackgroundImageUrl = game.BackgroundImageUrl
             };
 
     }
+
     public static Game ToEntity(this UpdateGameDto game,int id){
 
          return new Game{
                 Id = id,
                 Name = game.Name,
-                GenreId = game.GenreId,
-                PlatformId = game.PlatformId,
                 ReleaseDate = game.ReleaseDate,
                 MetaCritic = game.MetaCritic,
                 BackgroundImageUrl = game.BackgroundImageUrl
             };
 
     }
-    public static GameSummaryDto ToSummaryDto(this Game game){
+    public static GameSummaryDto ToSummaryDto(this Game game,List<string> genres, List<string> platforms){
         return new GameSummaryDto(
             game.Id, 
             game.Name, 
-            game.Genre!.Name, 
-            game.Platform!.Name,
+            genres,
+            platforms,
             game.ReleaseDate,
             game.MetaCritic,
             game.BackgroundImageUrl
         );
     }
-    public static GameDetailsDto ToDetailsDto(this Game game){
+    public static GameDetailsDto ToDetailsDto(this Game game,List<int> genreIds, List<int> platformIds){
         return new GameDetailsDto(
             game.Id, 
             game.Name, 
-            game.GenreId, 
-            game.PlatformId,
+            genreIds,
+            platformIds,
             game.ReleaseDate,
             game.MetaCritic,
             game.BackgroundImageUrl

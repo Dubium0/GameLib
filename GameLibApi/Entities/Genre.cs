@@ -6,7 +6,10 @@ namespace GameLibApi.Entities;
         
         public int Id { get; set;}
         public required string Name { get; set;}
+        
 
+        // Relationships
+         public ICollection<RGameGenre>? RGameGenres { get; set; }
 
     }
 

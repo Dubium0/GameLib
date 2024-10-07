@@ -3,6 +3,7 @@ using System;
 using GameLibApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GameLibApi.Migrations
 {
     [DbContext(typeof(GameLibContext))]
-    partial class GameLibContextModelSnapshot : ModelSnapshot
+    [Migration("20241003150231_ChangedTheNullablePropertyIdunnoWhy")]
+    partial class ChangedTheNullablePropertyIdunnoWhy
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,14 +56,14 @@ namespace GameLibApi.Migrations
                     b.Property<string>("BackgroundImageUrl")
                         .HasColumnType("text");
 
-                    b.Property<int>("MetaCritic")
+                    b.Property<int?>("MetaCritic")
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateOnly>("ReleaseDate")
+                    b.Property<DateOnly?>("ReleaseDate")
                         .HasColumnType("date");
 
                     b.HasKey("Id");
