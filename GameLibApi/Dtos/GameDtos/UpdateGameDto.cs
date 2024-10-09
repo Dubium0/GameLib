@@ -4,9 +4,9 @@ namespace GameLibApi.Dtos.GameDtos;
 
 public record class UpdateGameDto( 
     [Required] string Name,
-    [Required] int GenreId,
-    [Required] int PlatformId,
+    List<int>? GenreIds,
+    List<int>? PlatformIds,
     [Required] DateOnly ReleaseDate,
     [Required] int MetaCritic,
-    string? BackgroundImageUrl
+    [Required] string BackgroundImageUrl
 );

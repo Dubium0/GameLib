@@ -26,3 +26,34 @@ Content-Type: application/json
 GET https://api.rawg.io/api/games?key=6b5fcc8fe6c748eaac97665e86118d6f&metacritic="80-100"&page_size=400
 ###
 GET https://api.rawg.io/api/genres?key=6b5fcc8fe6c748eaac97665e86118d6f
+###
+GET http://localhost:5291/api/games
+###
+GET http://localhost:5291/api/games/4875
+###
+POST http://localhost:5291/api/games
+Content-Type: application/json
+
+{
+  "name" : "DUMMY",
+  "genreIds" : [8],
+  "platformIds" :[37],
+  "releaseDate" :"1999-12-12",
+  "metaCritic" : 0
+}
+###
+DELETE http://localhost:5291/api/games/4875
+###
+PUT http://localhost:5291/api/games/4876
+Content-Type: application/json
+
+{
+  "name": "DUMMY2",
+  "releaseDate": "1999-12-12",
+  "genreIds" :[10],
+  "platformIds" :[35],
+  "metaCritic": 0,
+  "backgroundImageUrl": "null"
+}
+###
+GET http://localhost:5291/api/games/4876
