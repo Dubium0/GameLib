@@ -42,7 +42,7 @@ Content-Type: application/json
   "metaCritic" : 0
 }
 ###
-DELETE http://localhost:5291/api/games/4875
+DELETE http://localhost:5291/api/games/4876
 ###
 PUT http://localhost:5291/api/games/4876
 Content-Type: application/json
@@ -57,3 +57,12 @@ Content-Type: application/json
 }
 ###
 GET http://localhost:5291/api/games/4876
+###
+POST http://localhost:5291/api/genres 
+Content-Type: application/json
+
+{
+  "name":"Action"
+}
+###
+GET http://localhost:5291/api/genres/9

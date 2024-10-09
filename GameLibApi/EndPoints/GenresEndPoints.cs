@@ -1,9 +1,12 @@
 using System;
+using System.Diagnostics;
+using System.Transactions;
 using GameLibApi.Data;
 using GameLibApi.Dtos.GenreDtos;
 using GameLibApi.Entities;
 using GameLibApi.Mappings;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace GameLibApi.EndPoints;
 
@@ -39,24 +42,51 @@ public static class GenresEndPoints
                 return Results.NotFound();
             }
 
-            dbContext.Entry(existingGenre)
-                .CurrentValues
-                .SetValues(updatedGenreDto.ToEntity(id));
+            using (var transaction = await dbContext.Database.BeginTransactionAsync()){
+                try{
 
-            await dbContext.SaveChangesAsync();
-            return Results.NoContent();
+                    dbContext.Entry(existingGenre)
+                        .CurrentValues
+                        .SetValues(updatedGenreDto.ToEntity(id));
+
+                    await dbContext.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return Results.NoContent();
+                }catch(Exception e){
+                    await transaction.RollbackAsync();
+                
+                    Debug.WriteLine($"Exception: {e} occured and transaction rolled back ");
+
+                    return TransactionExceptionHandler.Handle(e);
+
+                }
+            }
         });
 
         group.MapPost("/", async (CreateGenreDto newGenreDto,GameLibContext dbContext)=>{
 
             Genre genre =  newGenreDto.ToEntity();
            
-            dbContext
-                .Genres
-                .Add(genre);
+            using (var transaction = await dbContext.Database.BeginTransactionAsync() ){
+                try{
+
+                dbContext
+                    .Genres
+                    .Add(genre);
+                    
+                await dbContext
+                    .SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                }
+                catch(Exception e){
+                    await transaction.RollbackAsync();
                 
-            await dbContext
-                .SaveChangesAsync();
+                    Debug.WriteLine($"Exception: {e} occured and transaction rolled back ");
+
+                    return TransactionExceptionHandler.Handle(e);
+                }
+            }
 
             return Results.CreatedAtRoute(GetGenreEndpointName, 
             new { id = genre.Id}, genre.ToDto());
