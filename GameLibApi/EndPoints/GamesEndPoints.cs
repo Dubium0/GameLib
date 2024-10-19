@@ -1,9 +1,16 @@
 using System.Diagnostics;
+using System.Linq.Expressions;
+using System.Reflection.Metadata.Ecma335;
+using System.Threading.Tasks.Dataflow;
 using GameLibApi.Data;
+using GameLibApi.Dtos;
 using GameLibApi.Dtos.GameDtos;
 using GameLibApi.Entities;
 using GameLibApi.Mappings;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 namespace GameLibApi.EndPoints;
 
 public static class GamesEndPoints
@@ -12,7 +19,7 @@ public static class GamesEndPoints
     public static RouteGroupBuilder MapGamesEndpoints(this WebApplication app){
         var group = app.MapGroup("api/games").WithParameterValidation();
 
-        group.MapGet("/", GetGamesWithSummary);
+        group.MapGet("/", GetGamesWithDetails);
 
         group.MapGet("/{id}", GetGameById ).WithName(GetGameEndpointName);
 
@@ -25,14 +32,87 @@ public static class GamesEndPoints
         return group;
     }
 
-    public static async Task<IResult> GetGamesWithDetails(GameLibContext dbContext){
+    public static async Task<IResult> GetGamesWithDetails(GameLibContext dbContext,[AsParameters] GetGamesDto filters){
 
-        IQueryable<Game> games = dbContext.Games.OrderBy(game => game.Id).Take(10);
-        IQueryable<RGameGenre> rGameGenres = dbContext.RGameGenres;
-        IQueryable<RGamePlatform> rGamePlatforms = dbContext.RGamePlatforms;
-       
-        return Results.Ok( await
-            games.AsNoTracking()
+        IQueryable<Game> games = dbContext.Games.AsNoTracking();
+        IQueryable<RGameGenre> rGameGenres = dbContext.RGameGenres.AsNoTracking();
+        IQueryable<RGamePlatform> rGamePlatforms = dbContext.RGamePlatforms.AsNoTracking();
+
+        if(!string.IsNullOrEmpty(filters.Metacritic)){
+                
+            var filter =  MetacriticFilterGenerator(filters.Metacritic);
+            if( filter == null){
+                return Results.BadRequest($"Given metacritic filter is in wrong format! {filters.Metacritic}");
+            }
+            games = games.Where( filter );
+            }
+
+        if(!string.IsNullOrEmpty(filters.Dates)){
+            var filter = DateFilterGenerator(filters.Dates);
+            if( filter == null){
+                return Results.BadRequest($"Given date filter is in wrong format! {filters.Dates}");
+            }
+            games = games.Where( filter );
+        }
+            
+        if(!string.IsNullOrEmpty(filters.Genre)){
+            var filter = GameGenreFilterGenerator(filters.Genre);
+            if(filter == null){
+                return Results.BadRequest($"Given genre filter is in wrong format! {filters.Genre}");
+            }
+
+            games = from game in games
+                    join rGameGenre in rGameGenres.Where(filter) on game.Id equals rGameGenre.GameId
+                    select game;
+        }
+        
+
+        if(!string.IsNullOrEmpty(filters.Platform)){
+            var filter = GamePlatformFilterGenerator(filters.Platform);
+            if(filter == null){
+                 return Results.BadRequest($"Given genre filter is in wrong format! {filters.Genre}");
+            }
+            games = from game in games
+                    join rGamePlatform in rGamePlatforms.Where( filter ) on game.Id equals rGamePlatform.GameId
+                    select game;
+        }
+
+        if(!string.IsNullOrEmpty(filters.Orderings)){
+            // will try to find generalize this code
+            bool failed = false;
+            switch(filters.Orderings){
+                case "date":
+                    games = games.OrderBy(game => game.ReleaseDate);
+                break;
+                case "-date":
+                    games = games.OrderByDescending(game => game.ReleaseDate);
+                break;
+                case "metacritic":
+                    games = games.OrderBy(game => game.MetaCritic);
+                break;
+                case "-metacritic":
+                    games = games.OrderByDescending(game => game.MetaCritic);
+                break;
+                default:
+                    failed = true;
+                break;
+           }
+           if(failed){
+                return Results.BadRequest($"Given ordering filter is in wrong format! {filters.Orderings}");
+           }
+        }
+
+        int pageNumber = 0;
+        int pageCount = 200;
+        if( filters.PageNumber != null){
+            pageNumber =(int)filters.PageNumber;
+        }
+        
+        if( filters.PageCount != null){
+            pageCount = (int)filters.PageCount;
+        }    
+
+        var resultQuery = games.AsNoTracking()
                 .Select( 
                     game => game.ToDetailsDto(
                         rGameGenres
@@ -53,48 +133,24 @@ public static class GamesEndPoints
                         )
                         .ToList()
                     )
-            )
-            .ToListAsync()
+        );
+        
+                        
+        bool hasPreviousPage = pageNumber > 0;
+        bool hasNextPage = pageCount * pageNumber < resultQuery.Count(); 
+
+        return Results.Ok( new PageDto<GameDetailsDto>(
+                             resultQuery.Count(),
+                             hasPreviousPage,
+                             hasNextPage,
+                             await resultQuery
+                            .Skip(pageNumber * pageCount)
+                            .Take(pageCount)
+                            .ToListAsync()
+        )
+           
         );
              
-    }
-
-    public static async Task<IResult> GetGamesWithSummary(GameLibContext dbContext){
-
-        IQueryable<Game> games = dbContext.Games.OrderBy(game => game.Id).Take(10);
-        IQueryable<RGameGenre> rGameGenres = dbContext.RGameGenres;
-        IQueryable<RGamePlatform> rGamePlatforms = dbContext.RGamePlatforms;
-
-         return Results.Ok( await
-            games.AsNoTracking()
-                .Select( 
-                    game => game.ToSummaryDto(
-                        
-                        rGameGenres
-                        .AsNoTracking()
-                        .Where( 
-                            rGameGenre => rGameGenre.GameId == game.Id
-                        )
-                        .Select(
-                           rGameGenre => rGameGenre.Genre!.Name
-                        )
-                        .ToList()
-                        ,
-                        rGamePlatforms
-                        .Where(
-                            rGamePlatform => rGamePlatform.GameId == game.Id
-                        )
-                        .Select(
-                            rGamePlatform => rGamePlatform.Platform!.Name
-                        )
-                        .ToList()
-                    )
-            )
-            .ToListAsync()
-        );
-
-
-
     }
 
     public static async Task<IResult> GetGameById(int id,GameLibContext dbContext){
@@ -297,4 +353,103 @@ public static class GamesEndPoints
         return Results.NoContent();
     }
 
-}
+    
+    
+    public static Expression<Func<Game,bool>>? MetacriticFilterGenerator( string metacritic ){
+
+            var metacriticSplitted = metacritic.Split(',');
+
+            switch (metacriticSplitted.Count()){
+                case 1:
+                    {
+                        int metacriticRating;
+                        if( Int32.TryParse( metacriticSplitted[0], out metacriticRating)){
+                            
+                            return  game => game.MetaCritic  == metacriticRating;
+                        }
+                    }
+                break;
+                case 2:
+                    {
+                        int left;
+                        int right;
+                        if( Int32.TryParse( metacriticSplitted[0], out left) && Int32.TryParse( metacriticSplitted[1], out right)){
+                           if(left > right){
+                                var temp = right;
+                                right = left;
+                                left = temp;
+                           }
+                            
+                            return  game => game.MetaCritic  >  left  && game.MetaCritic  <  right ;;
+                        }
+                       
+                    }
+                break;
+
+                default:
+                break;
+            }
+            return null;
+
+            
+    }
+
+    public static Expression<Func<Game,bool>>? DateFilterGenerator( string date ){
+        var dateSplitted = date.Split(',');
+
+        switch(dateSplitted.Count()){
+            case 2:
+                DateOnly left;
+                DateOnly right;
+                if( DateOnly.TryParse(dateSplitted[0], out left) && DateOnly.TryParse(dateSplitted[1], out right)){
+                    if(left > right){
+                        var temp = right;
+                        right= left;
+                        left = temp;
+                    }
+                    return game => game.ReleaseDate > left && game.ReleaseDate < right;
+                    
+                }
+            break;
+            default:
+            break;
+        } 
+
+        return null;
+
+    }
+
+    public static Expression<Func<RGameGenre,bool>>? GameGenreFilterGenerator(string genre){
+        var genreSplitted = genre.Split(',');
+        
+        List<int> genreIds = new List<int>();
+
+        foreach( var genreIdStr in genreSplitted ){
+            if(Int32.TryParse(genreIdStr, out var index)){
+                genreIds.Add(index);
+            }else{
+                return null;
+            }
+        }
+
+        return rGameGenre => genreIds.Contains(rGameGenre.GenreId);
+    }
+
+    public static Expression<Func<RGamePlatform,bool>>? GamePlatformFilterGenerator(string platform){
+        var platformSplitted = platform.Split(',');
+        
+        List<int> platformIds = new List<int>();
+
+        foreach( var platformIdStr in platformSplitted ){
+            if(Int32.TryParse(platformIdStr, out var index)){
+                platformIds.Add(index);
+            }else{
+                return null;
+            }
+        }
+
+        return rGamePlatform => platformIds.Contains(rGamePlatform.PlatformId);
+    }
+
+}   
+

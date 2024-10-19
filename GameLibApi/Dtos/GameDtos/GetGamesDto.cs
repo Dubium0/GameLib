@@ -3,12 +3,12 @@ using System.ComponentModel.DataAnnotations;
 namespace GameLibApi.Dtos.GameDtos;
 
 public record class GetGamesDto
-(   // any string field should be comma seperated
-    // adding 'r' to any filter will reverse the result ( for only metacritic and dates)
-    [Range(1,double.MaxValue)] int? page,
-    List<string> genres, // anyGenre,anyGenre,anyGenre .....
-    List<string> platforms, // anyPlatform,anyPlatform,anyPlatform ...
-    string? metacritic ,// LOW,HIGH format or only one parameter
-    string? dates, // Year-month-day format or LOW,HIGH with same format
-    [Range(1,200)] int pageSize = 5 //default page size is 5
+(   
+   int? PageNumber, 
+   int? PageCount,
+   string? Metacritic, // exmp : metacritic=80,100 or metacritic=90
+   string? Dates, // exmp : dates=2020-12-12,2021-12-12 should be interval :<
+   string? Orderings, // exmp : orderings=metacritic or orderings=-metacritic
+   string? Genre, // exmp : genre=5,7,4 should be indices
+   string? Platform // exmp : platform=5,7,4 should be indices
 );
