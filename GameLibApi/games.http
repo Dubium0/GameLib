@@ -12,9 +12,9 @@ Content-Type: application/json
 ###
 GET http://localhost:5291/api/games?pageCount=20
 ###
-GET http://localhost:5291/games?page=20&descendingOrder=true
+GET http://localhost:5291/api/games?pageNumber=20
 ###
-GET http://localhost:5291/games?page=1&pageSize=5
+GET http://localhost:5291/api/games?pageNumber=1&pageCount=5
 ###
 POST http://localhost:5291/api/genres
 Content-Type: application/json

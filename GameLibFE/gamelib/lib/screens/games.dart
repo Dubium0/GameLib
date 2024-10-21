@@ -1,9 +1,12 @@
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/game_model.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../widgets/inf_box_grid_view.dart';
+import '../utils/item_cache.dart';
 
 class Games extends StatefulWidget{
   const Games({super.key});
@@ -35,24 +38,50 @@ Future<PagedGames> fetchPagedGames(int pageNumber, int pageCount) async {
 
 
 class _Gamestate extends State<Games> {
-  List<GameModel> games = List.empty(growable: true);
+  ItemCache<GameModel> games = ItemCache(maxItemCount: 500);
   late Future<List<GameModel>> games_;
-  final pageCount = 20;
+  final pageCount = 100;
   var pageNumber = 0;
   bool hasNextPage = true;
+  bool hasPreviousPage = false;
   late ScrollController controller;
 
-
-  Future<List<GameModel>> fetchGames() async{
+  Future<List<GameModel>> fetchInitialGames(int pageCount) async{
+    
     if(hasNextPage){
-      var pagedGames = await fetchPagedGames(pageNumber, pageCount);
+      var pagedGames = await fetchPagedGames(pageNumber , pageCount);
       hasNextPage = pagedGames.hasNextPage;
+      hasPreviousPage = pagedGames.hasPreviousPage;
       pageNumber ++;
-      games.addAll(pagedGames.games);
+      games.addItemsCached(pagedGames.games, Direction.tail);
     }
-    return games;   
+    return games.items;   
   }
 
+  Future<List<GameModel>> fetchNextGames() async{
+    
+    if(hasNextPage){
+      pageNumber ++;
+      var pagedGames = await fetchPagedGames(pageNumber , pageCount);
+      hasNextPage = pagedGames.hasNextPage;
+      hasPreviousPage = pagedGames.hasPreviousPage;
+      games.addItemsCached(pagedGames.games, Direction.tail);
+    }
+    return games.items;   
+  }
+
+  Future<List<GameModel>> fetchPreviousGames() async{
+    
+    if(hasPreviousPage){
+      pageNumber --;
+      var pagedGames = await fetchPagedGames(pageNumber, pageCount);
+      hasNextPage = pagedGames.hasNextPage;
+      hasPreviousPage = pagedGames.hasPreviousPage;
+      
+      games.addItemsCached(pagedGames.games, Direction.head);
+    }
+    return games.items;   
+  }
 
   @override
   void initState(){
@@ -63,12 +92,16 @@ class _Gamestate extends State<Games> {
       if (controller.hasClients) {
         if (controller.position.maxScrollExtent == controller.offset) {
           setState(() {
-            games_ = fetchGames();
+            games_ = fetchNextGames();
+          });
+        }else  if (controller.position.minScrollExtent == controller.offset) {
+          setState(() {
+            games_ = fetchPreviousGames();
           });
         }
       }
     });  
-    games_ = fetchGames(); 
+    games_ = fetchNextGames(); 
 
   }
 

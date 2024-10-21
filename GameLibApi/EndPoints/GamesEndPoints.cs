@@ -1,16 +1,11 @@
 using System.Diagnostics;
 using System.Linq.Expressions;
-using System.Reflection.Metadata.Ecma335;
-using System.Threading.Tasks.Dataflow;
 using GameLibApi.Data;
 using GameLibApi.Dtos;
 using GameLibApi.Dtos.GameDtos;
 using GameLibApi.Entities;
 using GameLibApi.Mappings;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Diagnostics;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 namespace GameLibApi.EndPoints;
 
 public static class GamesEndPoints
@@ -45,7 +40,7 @@ public static class GamesEndPoints
                 return Results.BadRequest($"Given metacritic filter is in wrong format! {filters.Metacritic}");
             }
             games = games.Where( filter );
-            }
+        }
 
         if(!string.IsNullOrEmpty(filters.Dates)){
             var filter = DateFilterGenerator(filters.Dates);

@@ -16,7 +16,7 @@ public static class TransactionExceptionHandler{
 
             }
         }
-        return Results.InternalServerError();
+        return Results.StatusCode(500);//Internal Server Error
 
     }
 }
