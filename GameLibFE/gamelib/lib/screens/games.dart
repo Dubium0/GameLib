@@ -3,10 +3,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../models/game_model.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../services/fetch_games.dart';
 import '../widgets/inf_box_grid_view.dart';
-import '../utils/item_cache.dart';
+
 
 class Games extends StatefulWidget{
   const Games({super.key});
@@ -16,92 +15,39 @@ class Games extends StatefulWidget{
 
 }
 
-Future<PagedGames> fetchPagedGames(int pageNumber, int pageCount) async {
-  final response = await http
-      .get(Uri.parse('http://localhost:5291/api/games?pageCount=$pageCount&pageNumber=$pageNumber'));
-
-  if (response.statusCode == 200) {
-    // If the server did return a 200 OK response,
-    // then parse the JSON.
-     // Parse the response body as JSON
-    final Map<String,dynamic> responseBody = jsonDecode(response.body) as Map<String,dynamic>;
-
-      // Convert the JSON into a list of GameModel instances
-    return PagedGames.fromJson(responseBody);
-
-  } else {
-    // If the server did not return a 200 OK response,
-    // then throw an exception.
-    throw Exception('Failed to load album');
-  }
-}
-
-
 class _Gamestate extends State<Games> {
-  ItemCache<GameModel> games = ItemCache(maxItemCount: 500);
+  late final PagedDataFetcher<GameModel,GameModelFactory> gameDataFetcher;
   late Future<List<GameModel>> games_;
-  final pageCount = 100;
-  var pageNumber = 0;
-  bool hasNextPage = true;
-  bool hasPreviousPage = false;
   late ScrollController controller;
 
-  Future<List<GameModel>> fetchInitialGames(int pageCount) async{
-    
-    if(hasNextPage){
-      var pagedGames = await fetchPagedGames(pageNumber , pageCount);
-      hasNextPage = pagedGames.hasNextPage;
-      hasPreviousPage = pagedGames.hasPreviousPage;
-      pageNumber ++;
-      games.addItemsCached(pagedGames.games, Direction.tail);
-    }
-    return games.items;   
-  }
+  
+  
 
-  Future<List<GameModel>> fetchNextGames() async{
-    
-    if(hasNextPage){
-      pageNumber ++;
-      var pagedGames = await fetchPagedGames(pageNumber , pageCount);
-      hasNextPage = pagedGames.hasNextPage;
-      hasPreviousPage = pagedGames.hasPreviousPage;
-      games.addItemsCached(pagedGames.games, Direction.tail);
-    }
-    return games.items;   
-  }
-
-  Future<List<GameModel>> fetchPreviousGames() async{
-    
-    if(hasPreviousPage){
-      pageNumber --;
-      var pagedGames = await fetchPagedGames(pageNumber, pageCount);
-      hasNextPage = pagedGames.hasNextPage;
-      hasPreviousPage = pagedGames.hasPreviousPage;
-      
-      games.addItemsCached(pagedGames.games, Direction.head);
-    }
-    return games.items;   
-  }
-
-  @override
+@override
   void initState(){
     super.initState();
+    
+    gameDataFetcher = PagedDataFetcher(
+                                        fetchUrl:'http://localhost:5291/api/games',
+                                        filter: GameFilter(),
+                                        itemFactory: GameModelFactory());
+    
     controller = ScrollController();
 
     controller.addListener(() {
       if (controller.hasClients) {
         if (controller.position.maxScrollExtent == controller.offset) {
           setState(() {
-            games_ = fetchNextGames();
+            games_ = gameDataFetcher.fetchNextItems();
           });
         }else  if (controller.position.minScrollExtent == controller.offset) {
           setState(() {
-            games_ = fetchPreviousGames();
+            games_ = gameDataFetcher.fetchPreviousItems();
           });
         }
       }
     });  
-    games_ = fetchNextGames(); 
+    games_ = gameDataFetcher.fetchNextItems(); 
 
   }
 

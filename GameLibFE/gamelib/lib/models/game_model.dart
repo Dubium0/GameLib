@@ -1,3 +1,7 @@
+abstract class ModelFactory<T>{
+  T fromJson(Map<String, dynamic> json);
+}
+
 class GameModel {
   
   final int id;
@@ -18,7 +22,6 @@ class GameModel {
     required this.backgroundImageUrl,
   });
 
-  // Factory constructor to create a GameModel from a JSON map
   factory GameModel.fromJson(Map<String, dynamic> json) {
     return GameModel(
       id: json['id'],
@@ -29,31 +32,53 @@ class GameModel {
       metaCritic: json['metaCritic'],
       backgroundImageUrl: json['backgroundImageUrl'],
     );
-   }
+  }
+}
+
+class GameModelFactory extends ModelFactory<GameModel>{
+  
+  @override
+  GameModel fromJson(Map<String, dynamic> json) {
+    return GameModel.fromJson(json);
+  }
+
 }
 
 
-class PagedGames{
+abstract class ItemFilterInterface {
+  String parseFilterParams();
+}
+
+class GameFilter implements ItemFilterInterface{
+  @override
+  String parseFilterParams() {
+    return "";
+  }
+
+}
+
+class PagedItem<T,TFactory extends ModelFactory<T>>{
   final int count;
   final bool hasPreviousPage;
   final bool hasNextPage;
-  final List<GameModel> games;
+  final List<T> items;
 
-  PagedGames(
+  PagedItem(
     {
       required this.count,
       required this.hasPreviousPage,
       required this.hasNextPage,
-      required this.games
+      required this.items
     }
   );
   
-  factory PagedGames.fromJson(Map<String, dynamic> json) {
-    return PagedGames(
+  factory PagedItem.fromJson(Map<String, dynamic> json,TFactory itemFactory) {
+    return PagedItem(
       count: json['count'],
       hasPreviousPage: json['hasPreviousPage'],
       hasNextPage: json['hasNextPage'],
-      games: List<GameModel>.from(json['results'].map((json) => GameModel.fromJson(json as Map<String,dynamic>))),
+      items: List<T>.from(json['results'].map((json) => itemFactory.fromJson(json as Map<String,dynamic>))),
     );
   }
 }
+

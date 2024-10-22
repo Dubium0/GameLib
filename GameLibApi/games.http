@@ -56,7 +56,7 @@ Content-Type: application/json
   "backgroundImageUrl": "null"
 }
 ###
-GET http://localhost:5291/api/games?dates=2020-12-12,2021-12-12&orderings=metacritic&genre=2
+GET http://localhost:5291/api/games?dates=2020-12-12,2021-12-12&orderings=metacritic&
 ###
 POST http://localhost:5291/api/genres 
 Content-Type: application/json
