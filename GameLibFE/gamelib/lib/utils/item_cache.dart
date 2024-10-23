@@ -6,7 +6,6 @@ class ItemCache <T> {
   ItemCache({int maxItemCount = 200}){
     _maxItemCount = maxItemCount;
   }
-
   void addItemsCached(List<T> items,Direction addDirection){
     var difference =(items.length + _items.length) - _maxItemCount ;
     var shouldRemoveItemsFromList = difference > 0;
@@ -37,6 +36,8 @@ class ItemCache <T> {
     }
   }
   List<T> get items => _items;
+  int get currentItemCount => _items.length;
   int get maxItemCount => _maxItemCount;
+  bool get isFull => currentItemCount == maxItemCount;
 
 }

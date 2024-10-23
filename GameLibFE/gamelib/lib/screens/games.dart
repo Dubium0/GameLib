@@ -1,11 +1,11 @@
 
 import 'dart:async';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/game_model.dart';
-import '../services/fetch_games.dart';
+import '../services/fetch_data.dart';
 import '../widgets/inf_box_grid_view.dart';
-
+import 'package:cached_network_image/cached_network_image.dart';
 
 class Games extends StatefulWidget{
   const Games({super.key});
@@ -19,11 +19,11 @@ class _Gamestate extends State<Games> {
   late final PagedDataFetcher<GameModel,GameModelFactory> gameDataFetcher;
   late Future<List<GameModel>> games_;
   late ScrollController controller;
+  final int loadingDelaySeconds = 1;
+  bool isLoading = false;
+    
 
-  
-  
-
-@override
+  @override
   void initState(){
     super.initState();
     
@@ -32,18 +32,41 @@ class _Gamestate extends State<Games> {
                                         filter: GameFilter(),
                                         itemFactory: GameModelFactory());
     
+    gameDataFetcher.addBeforeFetchOperation( () {
+      setState(() {
+        isLoading = true;
+      });
+    });
+     gameDataFetcher.addAfterFetchOperation( () {
+      setState(() {
+        isLoading = false;
+      });
+    });
+
     controller = ScrollController();
+
+
 
     controller.addListener(() {
       if (controller.hasClients) {
-        if (controller.position.maxScrollExtent == controller.offset) {
-          setState(() {
-            games_ = gameDataFetcher.fetchNextItems();
-          });
-        }else  if (controller.position.minScrollExtent == controller.offset) {
-          setState(() {
-            games_ = gameDataFetcher.fetchPreviousItems();
-          });
+        var halfWay = (controller.position.minScrollExtent + controller.position.maxScrollExtent) /2;
+        if (controller.position.pixels ==
+            controller.position.maxScrollExtent && !isLoading) { 
+
+            if(gameDataFetcher.isCacheFull){
+              controller.jumpTo( halfWay );
+            }
+            setState(() {
+              games_ = gameDataFetcher.fetchNextItems();
+            });
+        }else  if (controller.position.pixels ==
+            controller.position.minScrollExtent && !isLoading) {
+            if(gameDataFetcher.isCacheFull && gameDataFetcher.headPage.hasPreviousPage){
+              controller.jumpTo( halfWay );
+            }
+            setState(() {
+              games_ = gameDataFetcher.fetchPreviousItems();
+            });
         }
       }
     });  
@@ -77,6 +100,8 @@ class _Gamestate extends State<Games> {
                   items  : snapshot.data!,
                   itemBuilder: GameItem(),
                   scrollController: controller,
+                  crossAxisCount:  clampDouble(MediaQuery.sizeOf(context).width / 384, 1,6).round(),
+                  
                 );
           }else{
             children  = const <Widget>[
@@ -112,24 +137,25 @@ class GameItem implements IInfGridItemBuilder<GameModel>{
         borderRadius: BorderRadius.circular(15.0),
       ),
       elevation: 8,
-      child: Center(
-        child: Image.network(
-          item.backgroundImageUrl,
-          fit: BoxFit.cover,
-          height: 100, // Adjust the size as needed
-          width: 100,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
-                    : null,
+      margin: const EdgeInsets.all(10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15.0),
+        child: CachedNetworkImage(
+                imageUrl: item.backgroundImageUrl,
+                width: 250,  
+                memCacheWidth: (250 * MediaQuery.of(context).devicePixelRatio).round(),
+                imageBuilder: (context, imageProvider) => Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: imageProvider,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                placeholder: (context, url) =>
+                    const CircularProgressIndicator(),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
               ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) => const Icon(Icons.error), // In case of an error loading the image
-        ),
       )
     );
   }
