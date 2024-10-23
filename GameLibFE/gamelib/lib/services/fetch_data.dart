@@ -1,4 +1,4 @@
-import 'dart:collection';
+
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -69,7 +69,6 @@ class PagedDataFetcher<T,TFactory extends ModelFactory<T>> {
     } else {
       throw Exception('Failed to load page');
     }
-
   }
   Future<List<T>> fetchNextItems() async {
    

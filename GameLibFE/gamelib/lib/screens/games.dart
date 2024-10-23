@@ -11,11 +11,11 @@ class Games extends StatefulWidget{
   const Games({super.key});
 
   @override
-  State<Games> createState() => _Gamestate();
+  State<Games> createState() => _GamesState();
 
 }
 
-class _Gamestate extends State<Games> {
+class _GamesState extends State<Games> {
   late final PagedDataFetcher<GameModel,GameModelFactory> gameDataFetcher;
   late Future<List<GameModel>> games_;
   late ScrollController controller;
@@ -160,45 +160,3 @@ class GameItem implements IInfGridItemBuilder<GameModel>{
     );
   }
 }
-
-
-class RandomColorItem  implements IInfGridItemBuilder<String>{
-  
-  @override
-  Widget buildContent(BuildContext context, item) {
-     return Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-        elevation: 8,
-        color: Color(int.parse(item)),
-        child: Center(
-          child: SelectableText(
-            item,
-            cursorColor: Colors.blue,
-            contextMenuBuilder: (context, editableTextState) {
-              return AdaptiveTextSelectionToolbar.buttonItems(
-                anchors: editableTextState.contextMenuAnchors,
-                buttonItems: <ContextMenuButtonItem>[
-                  ContextMenuButtonItem(
-                    onPressed: () {
-                      editableTextState
-                          .copySelection(SelectionChangedCause.toolbar);
-                    },
-                    type: ContextMenuButtonType.copy,
-                  ),
-                ],
-              );
-            },
-            showCursor: true,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      );
-  }
-}
-
