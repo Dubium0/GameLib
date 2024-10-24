@@ -24,6 +24,7 @@ class InfBoxGridView<T> extends StatelessWidget {
       ),
       itemCount: items.length,
       itemBuilder: buildItem,
+      shrinkWrap: true,
       
     );
   }

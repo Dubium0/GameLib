@@ -19,3 +19,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets: 
+    - assets/
+    - assets/icons/
+  fonts:
+    - family : Copperplate Gothic Bold
+      fonts:
+        - asset: assets/fonts/Copperplate Gothic Bold/copperplategothic_bold.ttf
+    
